@@ -1,0 +1,86 @@
+# Docker Compose for local development and testing
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: saas_postgres
+    environment:
+      POSTGRES_USER: saas_user
+      POSTGRES_PASSWORD: saas_password
+      POSTGRES_DB: saas_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saas_user -d saas_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saas_api
+    environment:
+      # Database
+      DATABASE_URL: postgresql://saas_user:saas_password@db:5432/saas_db
+      SQLALCHEMY_ECHO: "false"
+
+      # API
+      API_HOST: 0.0.0.0
+      API_PORT: 3445
+      PORT: 3445
+
+      # JWT
+      JWT_SECRET_KEY: dev-secret-key-change-in-production-32chars
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRY_MINUTES: 1440
+
+      # Encryption (32+ chars for development)
+      ENCRYPTION_KEY: dev-encryption-key-32-chars-minimum-length
+
+      # Zerodha (add your credentials)
+      ZERODHA_API_KEY: ${ZERODHA_API_KEY:-}
+      ZERODHA_API_SECRET: ${ZERODHA_API_SECRET:-}
+
+      # Dhan (add your credentials)
+      DHAN_CLIENT_ID: ${DHAN_CLIENT_ID:-}
+      DHAN_BASE_URL: https://api.dhan.co/v2
+
+      # Environment
+      ENVIRONMENT: development
+      LOG_LEVEL: INFO
+
+      # CORS
+      ALLOWED_ORIGINS: "*"
+    ports:
+      - "3445:3445"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting server...' &&
+        python start_server.py
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3445/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local

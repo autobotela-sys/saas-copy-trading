@@ -1,0 +1,13 @@
+# Railway ignore – exclude from upload (CLI deploys) for faster builds
+# Nixpacks runs npm install in build context; excluding these reduces upload size
+node_modules/
+.next/
+out/
+.git/
+.env*.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+*.tsbuildinfo

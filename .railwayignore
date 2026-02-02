@@ -1,0 +1,27 @@
+# Railway ignore file
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+env/
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
