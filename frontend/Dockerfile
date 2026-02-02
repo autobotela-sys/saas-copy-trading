@@ -1,33 +1,27 @@
-# Frontend-only Dockerfile so Railway always builds Next.js (never Python).
-# Use with Root Directory = saas_app/frontend and no custom build command.
+# Simple Dockerfile for Railway Next.js deployment
+FROM node:20-alpine
 
-FROM node:20-alpine AS base
 WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
 
 # Install dependencies
-FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install
 
-# Build the app
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
+# Copy all files
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm run build
 
-# Production image (standalone output)
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Set environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-USER nextjs
+ENV PORT=3000
+
+# Build the application
+RUN npm run build
+
+# Expose port
 EXPOSE 3000
-ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+
+# Start the application
+CMD ["npm", "start"]
