@@ -95,6 +95,9 @@ app.include_router(brokers.router, prefix="/api/users", tags=["brokers"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["monitoring"])
 
+# Import models for table creation
+from app.models.audit_log import AuditLog
+
 # TODO: Add more routers (Week 4)
 # from app.api.routers import market
 # app.include_router(market.router, prefix="/api/market", tags=["market"])
