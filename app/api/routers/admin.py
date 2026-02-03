@@ -333,7 +333,7 @@ async def get_broadcast_history(
             "total_orders_failed": b.total_orders_failed
         }
         for b in broadcasts
-    ]
+    ]}
 
 
 @router.get("/broadcast/{broadcast_id}")
