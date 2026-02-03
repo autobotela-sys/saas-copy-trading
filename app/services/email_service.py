@@ -198,7 +198,7 @@ class EmailService:
 
     def generate_verification_token(self) -> str:
         """Generate a secure verification token."""
-        return secrets.urlsafe_urlsafe(32)
+        return secrets.token_urlsafe(32)
 
     def generate_reset_token(self) -> str:
         """Generate a secure password reset token."""
