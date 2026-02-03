@@ -87,6 +87,17 @@ async def health():
     return {"status": "healthy"}
 
 
+@app.post("/reset-database")
+async def reset_database():
+    """Reset database - ONLY FOR DEVELOPMENT."""
+    from app.db.database import engine, Base
+    print("Dropping all tables...")
+    Base.metadata.drop_all(bind=engine)
+    print("Creating all tables...")
+    Base.metadata.create_all(bind=engine)
+    return {"message": "Database reset complete"}
+
+
 # Add routers
 from app.api.routers import auth, users, brokers, admin, monitoring
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
