@@ -457,9 +457,9 @@ async def get_admin_stats(
 
     # Broadcast stats
     total_broadcasts = db.query(func.count(BroadcastOrder.id)).scalar()
-    successful_executions = db.query(func.count()).filter(
-        db.query(OrderExecution).execution_status == "SUCCESS").scalar_subquery()
-    ).select().scalar() or 0
+    successful_executions = db.query(func.count(OrderExecution.id)).filter(
+        OrderExecution.execution_status == "SUCCESS"
+    ).scalar() or 0
 
     return {
         "users": {
