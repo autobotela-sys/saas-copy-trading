@@ -3,38 +3,34 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { login } from '@/lib/auth';
+import { authApi } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
-interface LoginForm {
+interface ForgotPasswordForm {
   email: string;
-  password: string;
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>();
+  } = useForm<ForgotPasswordForm>();
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: ForgotPasswordForm) => {
     setError('');
     setLoading(true);
     try {
-      const user = await login(data.email, data.password);
-      if (user.role === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+      await authApi.forgotPassword(data.email);
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -55,24 +51,14 @@ export default function LoginPage() {
               </div>
               <h1 className="text-3xl font-black tracking-tight">Zap Copy Trading</h1>
             </div>
-            <h2 className="text-4xl font-bold leading-tight mb-6">Effortless trading synchronization at scale.</h2>
+            <h2 className="text-4xl font-bold leading-tight mb-6">Reset Your Password</h2>
             <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-              Professional multi-broker copy trading platform for <span className="text-primary font-semibold">Zerodha</span> & <span className="text-primary font-semibold">Dhan</span>. Synchronize your strategies across multiple accounts in real-time.
+              Enter your email address and we'll send you a link to reset your password.
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <span className="material-symbols-outlined text-primary mb-2">bolt</span>
-                <p className="font-semibold text-sm">Real-time execution</p>
-              </div>
-              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <span className="material-symbols-outlined text-primary mb-2">security</span>
-                <p className="font-semibold text-sm">Secure API Integration</p>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Right Side: Login Form */}
+        {/* Right Side: Forgot Password Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center bg-background-light dark:bg-background-dark px-6 py-12">
           <div className="w-full max-w-[440px] flex flex-col gap-8">
             {/* Mobile Logo Header */}
@@ -87,9 +73,9 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <h2 className="text-[#0d181c] dark:text-white text-3xl font-bold leading-tight tracking-tight">
-                Login to your account
+                Forgot Password?
               </h2>
-              <p className="text-slate-500 dark:text-slate-400">Welcome back! Please enter your details.</p>
+              <p className="text-slate-500 dark:text-slate-400">No worries, we'll send you reset instructions.</p>
             </div>
 
             {error && (
@@ -98,55 +84,46 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="name@company.com"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                error={errors.email?.message}
-              />
-
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[#0d181c] dark:text-white text-sm font-semibold leading-normal">
-                    Password
-                  </label>
-                  <Link className="text-sm font-bold text-primary hover:underline" href="/forgot-password">
-                    Forgot password?
+            {success ? (
+              <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-lg text-sm">
+                <p className="font-semibold mb-2">Check your email</p>
+                <p className="text-sm">We've sent a password reset link to your email address. Please check your inbox and follow the instructions.</p>
+                <div className="mt-4">
+                  <Link href="/login" className="text-primary font-bold hover:underline text-sm">
+                    Back to Login
                   </Link>
                 </div>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters',
-                    },
-                  })}
-                  error={errors.password?.message}
-                />
               </div>
+            ) : (
+              <>
+                <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    placeholder="name@company.com"
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Invalid email address',
+                      },
+                    })}
+                    error={errors.email?.message}
+                  />
 
-              <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-            </form>
+                  <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
+                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  </Button>
+                </form>
 
-            <p className="text-center text-sm text-[#49879c]">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-primary font-bold hover:underline">
-                Sign up
-              </Link>
-            </p>
+                <p className="text-center text-sm text-[#49879c]">
+                  Remember your password?{' '}
+                  <Link href="/login" className="text-primary font-bold hover:underline">
+                    Back to Login
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>

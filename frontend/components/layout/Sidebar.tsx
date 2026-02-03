@@ -21,10 +21,10 @@ const userNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { href: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
-  { href: '/admin/dashboard', icon: 'group', label: 'Users' },
-  { href: '/admin/dashboard', icon: 'settings_input_component', label: 'Broker Settings' },
+  { href: '/admin/users', icon: 'group', label: 'Users' },
+  { href: '/profile/broker', icon: 'settings_input_component', label: 'Broker Settings' },
   { href: '/admin/history', icon: 'receipt_long', label: 'Trade Logs' },
-  { href: '/admin/dashboard', icon: 'analytics', label: 'System Health' },
+  { href: '/admin/health', icon: 'analytics', label: 'System Health' },
 ];
 
 export function Sidebar() {

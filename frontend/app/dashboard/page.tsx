@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
 import { TopNavbar } from '@/components/layout/TopNavbar';
 import { SummaryCard } from '@/components/ui/SummaryCard';
@@ -9,9 +9,14 @@ import { userApi, Position } from '@/lib/api';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useState } from 'react';
+
+type PositionFilter = 'OPEN' | 'CLOSED' | 'ALL';
 
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth();
+  const queryClient = useQueryClient();
+  const [positionFilter, setPositionFilter] = useState<PositionFilter>('OPEN');
 
   const { data: dashboard, isLoading: dashboardLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -21,8 +26,8 @@ export default function DashboardPage() {
   });
 
   const { data: positions, isLoading: positionsLoading } = useQuery({
-    queryKey: ['positions', 'OPEN'],
-    queryFn: () => userApi.getPositions('OPEN'),
+    queryKey: ['positions', positionFilter],
+    queryFn: () => userApi.getPositions(positionFilter === 'ALL' ? undefined : positionFilter),
     refetchInterval: 10000,
     enabled: !loading,
   });
@@ -88,13 +93,25 @@ export default function DashboardPage() {
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex gap-2">
-            <Button variant="primary" size="sm">
+            <Button
+              variant={positionFilter === 'OPEN' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPositionFilter('OPEN')}
+            >
               Open
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button
+              variant={positionFilter === 'CLOSED' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPositionFilter('CLOSED')}
+            >
               Closed
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button
+              variant={positionFilter === 'ALL' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPositionFilter('ALL')}
+            >
               All
             </Button>
           </div>
@@ -106,7 +123,12 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 bg-white dark:bg-background-dark rounded-xl border border-[#cee2e8] dark:border-gray-800 overflow-hidden">
             <div className="p-6 border-b border-[#cee2e8] dark:border-gray-800 flex justify-between items-center">
               <h4 className="font-bold text-lg">Open Positions</h4>
-              <Button variant="ghost" size="sm" icon="refresh">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="refresh"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['positions'] })}
+              >
                 Refresh
               </Button>
             </div>

@@ -17,6 +17,7 @@ export default function AdminBroadcastOrderPage() {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState<any>(null);
+  const [validationError, setValidationError] = useState<string>('');
 
   const { data: users } = useQuery({
     queryKey: ['admin-users'],
@@ -38,6 +39,7 @@ export default function AdminBroadcastOrderPage() {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<BroadcastOrderRequest>({
     defaultValues: {
       symbol: 'BANKNIFTY',
@@ -53,8 +55,9 @@ export default function AdminBroadcastOrderPage() {
   const broadcastType = watch('broadcast_type');
 
   const onSubmit = (data: BroadcastOrderRequest) => {
+    setValidationError('');
     if (selectedUsers.length === 0 && !data.include_admin) {
-      alert('Please select at least one user or include admin account');
+      setValidationError('Please select at least one user or include admin account');
       return;
     }
 
@@ -100,6 +103,12 @@ export default function AdminBroadcastOrderPage() {
             multiple broker environments.
           </p>
         </div>
+
+        {validationError && (
+          <div className="mb-6 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 px-4 py-3 rounded-lg text-sm">
+            {validationError}
+          </div>
+        )}
 
         {showResults && broadcastResult && (
           <div className="mb-6 bg-white dark:bg-background-dark rounded-xl border border-[#cee2e8] dark:border-gray-800 shadow-sm p-6">
@@ -158,9 +167,7 @@ export default function AdminBroadcastOrderPage() {
                             ? 'bg-primary text-white shadow-sm'
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
-                        onClick={() => {
-                          // This would need to be handled with form state
-                        }}
+                        onClick={() => setValue('broadcast_type', 'ENTRY')}
                       >
                         ENTRY
                       </button>
@@ -171,6 +178,7 @@ export default function AdminBroadcastOrderPage() {
                             ? 'bg-primary text-white shadow-sm'
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
+                        onClick={() => setValue('broadcast_type', 'EXIT')}
                       >
                         EXIT
                       </button>

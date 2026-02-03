@@ -1,44 +1,80 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { login } from '@/lib/auth';
+import { authApi } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
-interface LoginForm {
-  email: string;
+interface ResetPasswordForm {
   password: string;
+  confirmPassword: string;
 }
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>();
+    watch,
+  } = useForm<ResetPasswordForm>();
 
-  const onSubmit = async (data: LoginForm) => {
+  const password = watch('password');
+
+  const onSubmit = async (data: ResetPasswordForm) => {
+    if (!token) {
+      setError('Invalid reset link. Please request a new password reset.');
+      return;
+    }
+
+    if (data.password !== data.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setError('');
     setLoading(true);
     try {
-      const user = await login(data.email, data.password);
-      if (user.role === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+      await authApi.resetPassword(token, data.password);
+      setSuccess(true);
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/login?reset=true');
+      }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Failed to reset password. The link may be expired or invalid.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show error if no token is present
+  if (!token && !success) {
+    return (
+      <div className="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-0 m-0">
+        <div className="w-full max-w-[440px] flex flex-col gap-8 px-6">
+          <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 px-4 py-3 rounded-lg text-sm">
+            <p className="font-semibold mb-2">Invalid Reset Link</p>
+            <p className="text-sm">This password reset link is invalid. Please request a new one.</p>
+          </div>
+          <Link href="/forgot-password">
+            <Button variant="primary" className="w-full">
+              Request New Reset Link
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-0 m-0">
@@ -55,24 +91,14 @@ export default function LoginPage() {
               </div>
               <h1 className="text-3xl font-black tracking-tight">Zap Copy Trading</h1>
             </div>
-            <h2 className="text-4xl font-bold leading-tight mb-6">Effortless trading synchronization at scale.</h2>
+            <h2 className="text-4xl font-bold leading-tight mb-6">Set New Password</h2>
             <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-              Professional multi-broker copy trading platform for <span className="text-primary font-semibold">Zerodha</span> & <span className="text-primary font-semibold">Dhan</span>. Synchronize your strategies across multiple accounts in real-time.
+              Enter your new password below to complete the reset process.
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <span className="material-symbols-outlined text-primary mb-2">bolt</span>
-                <p className="font-semibold text-sm">Real-time execution</p>
-              </div>
-              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <span className="material-symbols-outlined text-primary mb-2">security</span>
-                <p className="font-semibold text-sm">Secure API Integration</p>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Right Side: Login Form */}
+        {/* Right Side: Reset Password Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center bg-background-light dark:bg-background-dark px-6 py-12">
           <div className="w-full max-w-[440px] flex flex-col gap-8">
             {/* Mobile Logo Header */}
@@ -87,9 +113,9 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <h2 className="text-[#0d181c] dark:text-white text-3xl font-bold leading-tight tracking-tight">
-                Login to your account
+                Set New Password
               </h2>
-              <p className="text-slate-500 dark:text-slate-400">Welcome back! Please enter your details.</p>
+              <p className="text-slate-500 dark:text-slate-400">Enter your new password below</p>
             </div>
 
             {error && (
@@ -98,55 +124,52 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="name@company.com"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                error={errors.email?.message}
-              />
-
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[#0d181c] dark:text-white text-sm font-semibold leading-normal">
-                    Password
-                  </label>
-                  <Link className="text-sm font-bold text-primary hover:underline" href="/forgot-password">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters',
-                    },
-                  })}
-                  error={errors.password?.message}
-                />
+            {success ? (
+              <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-lg text-sm">
+                <p className="font-semibold mb-2">Password Reset Successful!</p>
+                <p className="text-sm">Your password has been reset. Redirecting to login...</p>
               </div>
+            ) : (
+              <>
+                <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+                  <Input
+                    label="New Password"
+                    type="password"
+                    placeholder="Enter your new password"
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
+                      },
+                    })}
+                    error={errors.password?.message}
+                  />
 
-              <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-            </form>
+                  <Input
+                    label="Confirm New Password"
+                    type="password"
+                    placeholder="Confirm your new password"
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: (value) => value === password || 'Passwords do not match',
+                    })}
+                    error={errors.confirmPassword?.message}
+                  />
 
-            <p className="text-center text-sm text-[#49879c]">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-primary font-bold hover:underline">
-                Sign up
-              </Link>
-            </p>
+                  <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
+                    {loading ? 'Resetting...' : 'Reset Password'}
+                  </Button>
+                </form>
+
+                <p className="text-center text-sm text-[#49879c]">
+                  Remember your password?{' '}
+                  <Link href="/login" className="text-primary font-bold hover:underline">
+                    Back to Login
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
