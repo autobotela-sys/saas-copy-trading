@@ -1,51 +1,49 @@
-# Multi-stage build for SaaS Copy Trading Platform
-FROM python:3.11-slim as builder
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Final stage
-FROM python:3.11-slim
+# Multi-stage build for frontend from subdirectory
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Copy frontend package files
+COPY frontend/package*.json ./
+COPY frontend/next.config.ts ./
+COPY frontend/tsconfig.json ./
+COPY frontend/eslint.config.mjs ./
+COPY frontend/postcss.config.mjs ./
 
-# Copy Python dependencies from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Install dependencies
+RUN npm install
 
-# Copy application code
-COPY . .
+# Copy frontend source
+COPY frontend/app ./app
+COPY frontend/components ./components
+COPY frontend/lib ./lib
+COPY frontend/hooks ./hooks
+COPY frontend/public ./public
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# Build
+RUN npm run build
 
-# Expose port
-EXPOSE 3445
+# Production stage
+FROM node:20-alpine AS runner
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3445/health || exit 1
+WORKDIR /app
 
-# Run the application
-CMD ["python", "start_server.py"]
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
