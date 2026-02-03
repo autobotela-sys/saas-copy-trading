@@ -73,7 +73,7 @@ def clear_rate_limit(email: str):
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, request: Request, db: Session = Depends(get_db)):
-    """Register a new user with email verification."""
+    """Register a new user with auto-activation (email verification disabled for now)."""
     # Check if user exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -82,29 +82,21 @@ async def register(user_data: UserRegister, request: Request, db: Session = Depe
             detail="Email already registered"
         )
 
-    # Create verification token
-    verification_token = email_service.generate_verification_token()
-    verification_expires = email_service.get_verification_expiry()
-
-    # Create new user with pending verification status
+    # Create new user with ACTIVE status (email verification disabled)
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
         password_hash=hashed_password,
         full_name=user_data.full_name,
         role="USER",
-        status=UserStatus.PENDING_VERIFICATION,
-        verification_token=verification_token,
-        verification_expires_at=verification_expires
+        status=UserStatus.ACTIVE,
+        email_verified=True  # Auto-verify for now
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Send verification email
-    email_service.send_verification_email(user_data.email, verification_token)
-
-    logger.info(f"New user registered: {user_data.email} - awaiting email verification")
+    logger.info(f"New user registered: {user_data.email}")
 
     return new_user
 
