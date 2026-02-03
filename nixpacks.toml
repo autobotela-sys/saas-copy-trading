@@ -1,4 +1,5 @@
-# Pin Python 3.11 for Railway/Nixpacks (matches runtime.txt)
-# Use if Railway picks a different Python version
-[variables]
-NIXPACKS_PYTHON_VERSION = "3.11"
+[phases.build]
+cmds = ["cd frontend && npm install", "cd frontend && npm run build"]
+
+[start]
+cmd = "cd frontend && npm start"
