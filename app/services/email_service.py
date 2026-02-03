@@ -202,7 +202,7 @@ class EmailService:
 
     def generate_reset_token(self) -> str:
         """Generate a secure password reset token."""
-        return secrets.urlsafe_urlsafe(32)
+        return secrets.token_urlsafe(32)
 
     def get_verification_expiry(self) -> datetime:
         """Get verification token expiry (24 hours)."""
