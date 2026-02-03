@@ -13,7 +13,7 @@ from app.schemas.auth import (
     EmailVerifyRequest, PasswordResetRequest, PasswordResetConfirm,
     PasswordChangeRequest, ResendVerificationRequest
 )
-from app.core.dependencies import get_current_user, get_request
+from app.core.dependencies import get_current_user
 from app.services.email_service import email_service
 import logging
 

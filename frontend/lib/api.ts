@@ -1,5 +1,5 @@
 // API client for FastAPI backend
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3445';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://backend-production-f8f2.up.railway.app';
 
 // Types
 export interface User {
