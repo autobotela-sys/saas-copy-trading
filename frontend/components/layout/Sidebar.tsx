@@ -13,9 +13,10 @@ interface NavItem {
 
 const userNavItems: NavItem[] = [
   { href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-  { href: '/profile/broker', icon: 'account_balance_wallet', label: 'Portfolio' },
-  { href: '/profile/broker', icon: 'hub', label: 'Brokers' },
-  { href: '/profile/trading', icon: 'settings', label: 'Settings' },
+  { href: '/profile', icon: 'person', label: 'Profile' },
+  { href: '/profile/broker', icon: 'account_balance_wallet', label: 'Brokers' },
+  { href: '/profile/trading', icon: 'settings', label: 'Trading Settings' },
+  { href: '/notifications', icon: 'notifications', label: 'Notifications' },
   { href: '/support', icon: 'support_agent', label: 'Support' },
 ];
 
